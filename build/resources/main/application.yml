@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: linker-script
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/linkscript}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+server:
+  error:
+    include-message: always
+
+linkscript:
+  ai:
+    enabled: ${LINKSCRIPT_AI_ENABLED:true}
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    chat-model: ${OPENAI_CHAT_MODEL:gpt-4.1-mini}
+    embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+    temperature: ${OPENAI_TEMPERATURE:0.7}
+  vector:
+    dimensions: ${LINKSCRIPT_VECTOR_DIMENSIONS:1536}
+    lexical-candidate-limit: ${LINKSCRIPT_LEXICAL_CANDIDATE_LIMIT:200}
+  logging:
+    enabled: ${LINKSCRIPT_LOGGING_ENABLED:true}
+    max-payload-length: ${LINKSCRIPT_LOGGING_MAX_PAYLOAD_LENGTH:1200}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

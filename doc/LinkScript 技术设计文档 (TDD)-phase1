@@ -1,0 +1,54 @@
+项目名称： LinkScript (林克文案库)技术栈： Java 21+, Spring Boot 3.4+, Spring AI, PostgreSQL (pgvector)核心理念： 逻辑原子化、样本驱动生成、异步解耦。1. 系统架构图 (System Overview)本项目采用 “采集-拆解-存储-生成” 的四步闭环架构。为了快速启动，异步处理基于 Spring Events (内存模式)。Code snippetgraph TD
+    A[Douyin Parser] -- REST POST --> B[Ingest Controller]
+    B -- Save Raw --> C[(PostgreSQL)]
+    B -- Publish Event --> D[Spring Event Bus]
+    D -- Async Listen --> E[Analysis Listener]
+    E -- Call LLM --> F[Spring AI ChatModel]
+    F -- Return JSON --> E
+    E -- Vectorize --> G[Embedding Model]
+    E -- Save Fragments --> C
+    
+    H[User UI] -- Topic + Samples --> I[Generation Controller]
+    I -- RAG Search --> C
+    I -- Few-Shot Prompt --> F
+    F -- Stream Result --> H
+2. 数据库设计 (Database Schema)设计原则：不使用物理外键，通过 script_uuid 进行逻辑关联，提升写入性能与迁移灵活性。2.1 素材主表：ls_script字段名类型描述索引idBIGINT主键 (Snowflake 或 Identity)PKscript_uuidVARCHAR(64)业务唯一标识 (UUID)UNIQUEtitleVARCHAR(255)视频标题/文案标题-contentTEXT原始文案全文-transcriptTEXT语音转录全文-source_platformVARCHAR(32)来源 (douyin, xiaohongshu)INDEXexternal_idVARCHAR(128)平台原始 ID-stats_jsonTEXT互动数据 (JSON 格式存储)-statusVARCHAR(20)状态 (PENDING, ANALYZING, COMPLETED, FAILED)INDEXcreated_atTIMESTAMP创建时间-2.2 逻辑碎片表：ls_logic_fragment字段名类型描述索引idBIGINT主键PKscript_uuidVARCHAR(64)逻辑关联主表INDEXf_typeVARCHAR(20)类型 (HOOK, BODY, CTA, TWIST)INDEXcontentTEXT碎片文字内容-logic_descTEXTAI 分析的该段逻辑点-embeddingVECTOR(1536)向量字段 (pgvector 存储)HNSW INDEX2.3 创作日志表：ls_generation_log字段名类型描述索引idBIGINT主键PKtopicVARCHAR(255)创作主题-reference_uuidsTEXT引用样本 UUID 列表 (逗号分隔)-ai_outputTEXTAI 生成的原始版本-user_editTEXT用户修改后的版本-scoreINT用户反馈评分-created_atTIMESTAMP创建时间-3. 项目目录结构 (File Architecture)Plaintextcom.linkscript
+├── api                    # RESTful 接口定义 (Controller)
+│   ├── IngestController.java
+│   ├── ScriptController.java
+│   └── LabController.java
+├── core                   # 核心业务逻辑
+│   ├── analysis           # 异步拆解逻辑
+│   │   ├── AnalysisListener.java
+│   │   └── AnalysisService.java
+│   ├── generation         # Few-shot 生成逻辑
+│   │   └── GenerationService.java
+│   └── vector             # 向量检索服务
+│       └── VectorSearchService.java
+├── domain                 # 实体与数据访问
+│   ├── entity             # JPA Entities
+│   ├── repository         # Spring Data Repositories
+│   └── dto                # Request/Response Objects
+├── infra                  # 基础设施配置
+│   ├── ai                 # Spring AI 配置 (DeepSeek/OpenAI)
+│   ├── async              # 虚拟线程/线程池配置
+│   └── exception          # 全局异常处理
+└── LinkScriptApplication.java
+4. RESTful API 接口规格4.1 素材摄取 (Parser 推送)URL: POST /api/v1/scripts/ingestPayload: ```json{"title": "如何用AI写代码","content": "...","sourcePlatform": "douyin","externalId": "123456","statistics": {"likes": 100, "shares": 50}}Success: 202 Accepted4.2 语义搜索爆款钩子URL: GET /api/v1/fragments/search?topic=职场&type=HOOK&limit=3Response: 返回语义最接近的 3 个 Hook 及其逻辑拆解。4.3 AI 文案创作 (Few-Shot)URL: POST /api/v1/compositions/generatePayload:JSON{
+  "topic": "新产品发布",
+  "sampleUuids": ["uuid1", "uuid2"],
+  "options": {"tone": "幽默", "length": "300"}
+}
+5. 关键技术细节5.1 异步非阻塞处理利用 Java 21 的 Virtual Threads 配合 Spring @Async。AI 拆解是一个典型的 I/O 密集型任务，虚拟线程可以显著降低线程开销。Java// AsyncConfig.java
+@Bean
+public Executor taskExecutor() {
+    return Executors.newVirtualThreadPerTaskExecutor();
+}
+5.2 Spring AI 提示词工程 (Few-Shot 组装)在生成文案时，系统会动态构造 Prompt：$$Prompt = System\_Role + User\_Topic + \sum (Reference\_Logic + Reference\_Content)$$Java// 简化代码逻辑
+var samples = vectorStore.similaritySearch(request.topic());
+String prompt = """
+    你现在是爆款编剧。参考以下逻辑：
+    %s
+    请根据上述风格，为主题 %s 创作文案。
+    """.formatted(samples, request.topic());
+6. 环境依赖要求JDK: 21+ (为了虚拟线程)DB: PostgreSQL 15+ (必须安装 pgvector 扩展)Spring Boot: 3.4.0+Spring AI: 1.0.0-M1+LinkScript 设计已完成。这份文档现在可以作为你写代码的“说明书”了。

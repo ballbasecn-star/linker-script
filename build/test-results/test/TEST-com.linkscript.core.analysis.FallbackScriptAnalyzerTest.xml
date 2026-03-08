@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.linkscript.core.analysis.FallbackScriptAnalyzerTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-03-08T13:16:04.264Z" hostname="appledeMac-mini.local" time="0.054">
+  <properties/>
+  <testcase name="shouldSplitScriptIntoHookAndCtaFragments()" classname="com.linkscript.core.analysis.FallbackScriptAnalyzerTest" time="0.043"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
