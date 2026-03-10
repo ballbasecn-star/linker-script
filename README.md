@@ -84,7 +84,7 @@ export OPENAI_EMBEDDING_MODEL='Qwen/Qwen3-Embedding-8B'
 ## Dev Smoke Test
 
 ```bash
-export PGHOST=117.72.207.52
+export PGHOST=********
 export PGPORT=5432
 export PGDATABASE=postgres
 export PGUSER=postgres
