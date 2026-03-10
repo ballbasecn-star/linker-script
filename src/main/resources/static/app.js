@@ -193,7 +193,7 @@ async function onGenerateSubmit(event) {
 }
 
 async function pollScript(scriptUuid) {
-  const maxAttempts = 45;
+  const maxAttempts = 150;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const detail = await requestJson(`/api/v1/scripts/${scriptUuid}`);
     if (detail.status === "COMPLETED" || detail.status === "FAILED") {

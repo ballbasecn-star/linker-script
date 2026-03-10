@@ -11,6 +11,7 @@ services:
       OPENAI_CHAT_MODEL: ${OPENAI_MODEL}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
+      LINKSCRIPT_AI_READ_TIMEOUT: "180"
     # Port is not exported directly, relies on shared-proxy for Nginx routing
     networks:
       - shared-proxy
