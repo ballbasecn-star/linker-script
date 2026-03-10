@@ -6,15 +6,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record ScriptDetailResponse(
-        String scriptUuid,
-        String title,
-        String content,
-        String transcript,
-        String sourcePlatform,
-        String externalId,
-        JsonNode statistics,
-        ScriptStatus status,
-        LocalDateTime createdAt,
-        List<LogicFragmentDto> fragments
-) {
+                String scriptUuid,
+                String title,
+                String content,
+                String transcript,
+                String sourcePlatform,
+                String externalId,
+                JsonNode statistics,
+                ScriptStatus status,
+                Double heatScore,
+                String heatLevel,
+                LocalDateTime createdAt,
+                List<LogicFragmentDto> fragments,
+                List<TagDto> tags) {
 }

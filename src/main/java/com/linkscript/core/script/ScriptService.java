@@ -3,47 +3,59 @@ package com.linkscript.core.script;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkscript.core.analysis.AnalysisRequestedEvent;
+import com.linkscript.core.score.HeatScoreCalculator;
+import com.linkscript.core.tag.TagService;
 import com.linkscript.domain.dto.IngestScriptRequest;
 import com.linkscript.domain.dto.IngestScriptResponse;
 import com.linkscript.domain.dto.LogicFragmentDto;
 import com.linkscript.domain.dto.ScriptDetailResponse;
+import com.linkscript.domain.dto.TagDto;
 import com.linkscript.domain.entity.LogicFragmentEntity;
 import com.linkscript.domain.entity.ScriptEntity;
 import com.linkscript.domain.entity.ScriptStatus;
 import com.linkscript.domain.repository.LogicFragmentRepository;
 import com.linkscript.domain.repository.ScriptRepository;
 import com.linkscript.infra.exception.NotFoundException;
+import com.linkscript.infra.logging.RequestTraceFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import com.linkscript.infra.logging.RequestTraceFilter;
 
 @Service
 public class ScriptService {
+
+    private static final Logger log = LoggerFactory.getLogger(ScriptService.class);
 
     private final ScriptRepository scriptRepository;
     private final LogicFragmentRepository logicFragmentRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
+    private final HeatScoreCalculator heatScoreCalculator;
+    private final TagService tagService;
 
     public ScriptService(
             ScriptRepository scriptRepository,
             LogicFragmentRepository logicFragmentRepository,
             ApplicationEventPublisher eventPublisher,
-            ObjectMapper objectMapper
-    ) {
+            ObjectMapper objectMapper,
+            HeatScoreCalculator heatScoreCalculator,
+            TagService tagService) {
         this.scriptRepository = scriptRepository;
         this.logicFragmentRepository = logicFragmentRepository;
         this.eventPublisher = eventPublisher;
         this.objectMapper = objectMapper;
+        this.heatScoreCalculator = heatScoreCalculator;
+        this.tagService = tagService;
     }
 
     @Transactional
@@ -56,11 +68,17 @@ public class ScriptService {
         entity.setExternalId(request.externalId());
         entity.setStatsJson(toJson(request.statistics()));
         entity.setStatus(ScriptStatus.PENDING);
+
+        // Calculate heat score from statistics
+        HeatScoreCalculator.HeatResult heat = heatScoreCalculator.calculate(request.statistics());
+        entity.setHeatScore(heat.score());
+        entity.setHeatLevel(heat.level());
+        log.info("script.heat_score uuid={} score={} level={}", entity.getScriptUuid(), heat.score(), heat.level());
+
         ScriptEntity saved = scriptRepository.save(entity);
         eventPublisher.publishEvent(new AnalysisRequestedEvent(
                 saved.getScriptUuid(),
-                MDC.get(RequestTraceFilter.REQUEST_ID)
-        ));
+                MDC.get(RequestTraceFilter.REQUEST_ID)));
         return new IngestScriptResponse(saved.getScriptUuid(), saved.getStatus());
     }
 
@@ -71,6 +89,7 @@ public class ScriptService {
         List<LogicFragmentDto> fragments = logicFragmentRepository.findByScriptUuidOrderByIdAsc(scriptUuid).stream()
                 .map(this::toFragmentDto)
                 .toList();
+        List<TagDto> tags = tagService.getTagsByScript(scriptUuid);
         return new ScriptDetailResponse(
                 script.getScriptUuid(),
                 script.getTitle(),
@@ -80,9 +99,11 @@ public class ScriptService {
                 script.getExternalId(),
                 readJson(script.getStatsJson()),
                 script.getStatus(),
+                script.getHeatScore(),
+                script.getHeatLevel(),
                 script.getCreatedAt(),
-                fragments
-        );
+                fragments,
+                tags);
     }
 
     @Transactional
@@ -103,8 +124,7 @@ public class ScriptService {
         if (StringUtils.hasText(request.externalId())) {
             Optional<ScriptEntity> existing = scriptRepository.findFirstBySourcePlatformAndExternalId(
                     request.sourcePlatform(),
-                    request.externalId()
-            );
+                    request.externalId());
             if (existing.isPresent()) {
                 return existing.get();
             }
@@ -116,7 +136,11 @@ public class ScriptService {
     }
 
     private LogicFragmentDto toFragmentDto(LogicFragmentEntity fragment) {
-        return new LogicFragmentDto(fragment.getFragmentType(), fragment.getContent(), fragment.getLogicDesc());
+        return new LogicFragmentDto(
+                fragment.getFragmentType(),
+                fragment.getContent(),
+                fragment.getLogicDesc(),
+                fragment.getConfidence() != null ? fragment.getConfidence() : 0);
     }
 
     private String toJson(Object value) {

@@ -18,19 +18,20 @@ public class LogicFragmentJdbcRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(String scriptUuid, FragmentType type, String content, String logicDesc, String vectorLiteral) {
+    public void insert(String scriptUuid, FragmentType type, String content, String logicDesc, String vectorLiteral,
+            double confidence) {
         String pgSql = """
-                INSERT INTO ls_logic_fragment (script_uuid, f_type, content, logic_desc, embedding)
-                VALUES (?, ?, ?, ?, CAST(? AS vector))
+                INSERT INTO ls_logic_fragment (script_uuid, f_type, content, logic_desc, embedding, confidence)
+                VALUES (?, ?, ?, ?, CAST(? AS vector), ?)
                 """;
         try {
-            jdbcTemplate.update(pgSql, scriptUuid, type.name(), content, logicDesc, vectorLiteral);
+            jdbcTemplate.update(pgSql, scriptUuid, type.name(), content, logicDesc, vectorLiteral, confidence);
         } catch (DataAccessException exception) {
             String genericSql = """
-                    INSERT INTO ls_logic_fragment (script_uuid, f_type, content, logic_desc, embedding)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO ls_logic_fragment (script_uuid, f_type, content, logic_desc, embedding, confidence)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     """;
-            jdbcTemplate.update(genericSql, scriptUuid, type.name(), content, logicDesc, vectorLiteral);
+            jdbcTemplate.update(genericSql, scriptUuid, type.name(), content, logicDesc, vectorLiteral, confidence);
         }
     }
 
@@ -65,8 +66,7 @@ public class LogicFragmentJdbcRepository {
                 FragmentType.valueOf(resultSet.getString("f_type")),
                 resultSet.getString("content"),
                 resultSet.getString("logic_desc"),
-                resultSet.getDouble("score")
-        );
+                resultSet.getDouble("score"));
     }
 
     public record SearchHit(
@@ -75,7 +75,6 @@ public class LogicFragmentJdbcRepository {
             FragmentType type,
             String content,
             String logicDesc,
-            double score
-    ) {
+            double score) {
     }
 }

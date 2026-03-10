@@ -1,0 +1,1 @@
+ALTER TABLE ls_logic_fragment ADD COLUMN confidence DOUBLE PRECISION DEFAULT 0;

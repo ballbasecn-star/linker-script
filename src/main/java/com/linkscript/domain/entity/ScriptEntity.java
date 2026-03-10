@@ -44,6 +44,12 @@ public class ScriptEntity {
     @Column(nullable = false, length = 20)
     private ScriptStatus status;
 
+    @Column(name = "heat_score")
+    private Double heatScore;
+
+    @Column(name = "heat_level", length = 2)
+    private String heatLevel;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -120,6 +126,22 @@ public class ScriptEntity {
 
     public void setStatus(ScriptStatus status) {
         this.status = status;
+    }
+
+    public Double getHeatScore() {
+        return heatScore;
+    }
+
+    public void setHeatScore(Double heatScore) {
+        this.heatScore = heatScore;
+    }
+
+    public String getHeatLevel() {
+        return heatLevel;
+    }
+
+    public void setHeatLevel(String heatLevel) {
+        this.heatLevel = heatLevel;
     }
 
     public LocalDateTime getCreatedAt() {

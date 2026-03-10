@@ -32,6 +32,9 @@ public class LogicFragmentEntity {
     @Column(name = "logic_desc", columnDefinition = "TEXT")
     private String logicDesc;
 
+    @Column
+    private Double confidence;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -76,6 +79,14 @@ public class LogicFragmentEntity {
 
     public void setLogicDesc(String logicDesc) {
         this.logicDesc = logicDesc;
+    }
+
+    public Double getConfidence() {
+        return confidence;
+    }
+
+    public void setConfidence(Double confidence) {
+        this.confidence = confidence;
     }
 
     public LocalDateTime getCreatedAt() {

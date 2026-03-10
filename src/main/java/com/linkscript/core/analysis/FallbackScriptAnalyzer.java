@@ -26,11 +26,11 @@ public class FallbackScriptAnalyzer {
                 .filter(StringUtils::hasText)
                 .toList();
         if (sentences.isEmpty()) {
-            return List.of(new AnalyzedFragment(FragmentType.BODY, source.trim(), "整体内容较短，保留为正文片段。"));
+            return List.of(new AnalyzedFragment(FragmentType.BODY, source.trim(), "整体内容较短，保留为正文片段。", 0.5));
         }
 
         List<AnalyzedFragment> fragments = new ArrayList<>();
-        fragments.add(new AnalyzedFragment(FragmentType.HOOK, sentences.getFirst(), "开场直接抛出问题或结果，适合作为黄金 3 秒钩子。"));
+        fragments.add(new AnalyzedFragment(FragmentType.HOOK, sentences.getFirst(), "开场直接抛出问题或结果，适合作为黄金 3 秒钩子。", 0.5));
 
         if (sentences.size() == 1) {
             return fragments;
@@ -51,8 +51,7 @@ public class FallbackScriptAnalyzer {
             fragments.add(new AnalyzedFragment(
                     FragmentType.SETUP,
                     middle.getFirst(),
-                    "先铺设场景、痛点或冲突背景，承接钩子。"
-            ));
+                    "先铺设场景、痛点或冲突背景，承接钩子。", 0.5));
         }
 
         if (middle.size() > 1) {
@@ -60,20 +59,20 @@ public class FallbackScriptAnalyzer {
             fragments.add(new AnalyzedFragment(
                     FragmentType.VALUE,
                     value,
-                    "用于交付核心方法、观点或信息增量。"
-            ));
+                    "用于交付核心方法、观点或信息增量。", 0.5));
         }
 
         if (StringUtils.hasText(twistSentence)) {
-            fragments.add(new AnalyzedFragment(FragmentType.TWIST, twistSentence, "通过反转或出乎意料的信息提高完播与记忆点。"));
+            fragments.add(new AnalyzedFragment(FragmentType.TWIST, twistSentence, "通过反转或出乎意料的信息提高完播与记忆点。", 0.5));
         }
 
         if (StringUtils.hasText(ctaSentence)) {
-            fragments.add(new AnalyzedFragment(FragmentType.CTA, ctaSentence, "引导用户完成关注、评论、私信等动作。"));
+            fragments.add(new AnalyzedFragment(FragmentType.CTA, ctaSentence, "引导用户完成关注、评论、私信等动作。", 0.5));
         }
 
         if (fragments.size() == 1) {
-            fragments.add(new AnalyzedFragment(FragmentType.BODY, join(sentences.subList(1, sentences.size())), "主体内容归纳为正文。"));
+            fragments.add(new AnalyzedFragment(FragmentType.BODY, join(sentences.subList(1, sentences.size())),
+                    "主体内容归纳为正文。", 0.5));
         }
 
         return fragments.stream()
