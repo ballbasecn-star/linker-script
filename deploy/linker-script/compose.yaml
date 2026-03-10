@@ -1,0 +1,16 @@
+services:
+  linker-script:
+    image: linkscript:latest-amd64
+    container_name: linker-script
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      JAVA_OPTS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
+    # Port is not exported directly, relies on shared-proxy for Nginx routing
+    networks:
+      - shared-proxy
+
+networks:
+  shared-proxy:
+    external: true
