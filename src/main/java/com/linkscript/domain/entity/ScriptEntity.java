@@ -37,7 +37,7 @@ public class ScriptEntity {
     @Column(name = "external_id", length = 128)
     private String externalId;
 
-    @Column(name = "stats_json", columnDefinition = "TEXT")
+    @Column(name = "stats_json", columnDefinition = "JSONB")
     private String statsJson;
 
     @Enumerated(EnumType.STRING)

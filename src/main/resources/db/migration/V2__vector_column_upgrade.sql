@@ -1,3 +1,6 @@
+-- Versioned replacement for R__enable_pgvector_if_available.sql
+-- Runs once; safely upgrades the embedding column from TEXT to vector(1536) if pgvector is available.
+
 DO $$
 DECLARE
     pgvector_ready boolean := true;
@@ -7,10 +10,12 @@ BEGIN
     EXCEPTION
         WHEN OTHERS THEN
             pgvector_ready := false;
-            RAISE NOTICE 'pgvector extension is not available, keeping lexical fallback mode: %', SQLERRM;
+            RAISE WARNING '[LinkScript] pgvector extension is NOT available – vector search will use lexical fallback. Error: %', SQLERRM;
     END;
 
     IF pgvector_ready THEN
+        RAISE NOTICE '[LinkScript] pgvector extension ready, upgrading embedding column to vector(1536)';
+
         BEGIN
             ALTER TABLE ls_logic_fragment
                 ALTER COLUMN embedding TYPE vector(1536)
@@ -20,7 +25,7 @@ BEGIN
                       END;
         EXCEPTION
             WHEN OTHERS THEN
-                RAISE NOTICE 'Unable to convert embedding column to vector: %', SQLERRM;
+                RAISE WARNING '[LinkScript] Unable to convert embedding column to vector: %', SQLERRM;
         END;
 
         IF NOT EXISTS (
@@ -32,9 +37,10 @@ BEGIN
             BEGIN
                 CREATE INDEX idx_ls_logic_fragment_embedding
                     ON ls_logic_fragment USING hnsw (embedding vector_cosine_ops);
+                RAISE NOTICE '[LinkScript] HNSW index created on ls_logic_fragment.embedding';
             EXCEPTION
                 WHEN OTHERS THEN
-                    RAISE NOTICE 'Unable to create pgvector index: %', SQLERRM;
+                    RAISE WARNING '[LinkScript] Unable to create pgvector HNSW index: %', SQLERRM;
             END;
         END IF;
     END IF;
