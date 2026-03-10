@@ -1,0 +1,10 @@
+.gradle
+.idea
+build/
+bin/
+out/
+.DS_Store
+*.log
+kubernetes/
+docker-compose.yml
+.git
