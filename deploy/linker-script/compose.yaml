@@ -7,6 +7,9 @@ services:
       - .env
     environment:
       JAVA_OPTS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
+      DB_USERNAME: ${DB_USER}
+      OPENAI_CHAT_MODEL: ${OPENAI_MODEL}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
     # Port is not exported directly, relies on shared-proxy for Nginx routing
     networks:
       - shared-proxy
