@@ -10,6 +10,7 @@ services:
       DB_USERNAME: ${DB_USER}
       OPENAI_CHAT_MODEL: ${OPENAI_MODEL}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
     # Port is not exported directly, relies on shared-proxy for Nginx routing
     networks:
       - shared-proxy
