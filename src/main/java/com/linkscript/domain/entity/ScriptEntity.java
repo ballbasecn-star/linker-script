@@ -10,6 +10,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "ls_script")
@@ -37,6 +39,7 @@ public class ScriptEntity {
     @Column(name = "external_id", length = 128)
     private String externalId;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "stats_json", columnDefinition = "JSONB")
     private String statsJson;
 
