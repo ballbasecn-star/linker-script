@@ -97,6 +97,34 @@
             <div class="panel-log" id="ingestLog">等待导入任务</div>
         </section>
 
+        <section class="panel panel-library">
+            <div class="panel-header">
+                <div>
+                    <p class="panel-kicker">01.5 / Library</p>
+                    <h2>素材资源库</h2>
+                </div>
+                <span class="panel-tag">Script DB</span>
+            </div>
+            <form id="libraryForm" class="form-stack compact">
+                <div class="inline-grid triple-grid">
+                    <label>
+                        <span>标签筛选</span>
+                        <input type="text" name="tags" placeholder="多标签用逗号分隔，如: 职场,创业">
+                    </label>
+                    <label>
+                        <span>热度筛选</span>
+                        <input type="text" name="heatLevel" value="S,A" placeholder="S,A,B,C,D">
+                    </label>
+                    <div class="action-cell">
+                        <button type="submit" class="primary-btn wide-btn">筛选素材</button>
+                    </div>
+                </div>
+            </form>
+            <div class="result-list" id="libraryResults">
+                <div class="empty-state">输入条件筛选素材库</div>
+            </div>
+        </section>
+
         <section class="panel panel-analysis">
             <div class="panel-header">
                 <div>

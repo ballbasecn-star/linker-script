@@ -208,6 +208,7 @@ body {
 }
 
 .panel-ingest,
+.panel-library,
 .panel-analysis {
     min-height: 680px;
 }
@@ -452,6 +453,74 @@ textarea {
 .generation-output h3,
 .generation-output .generation-meta {
     margin-bottom: 14px;
+}
+
+/* Enhancements for v1.1 */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.tag-chip {
+    background: rgba(88, 221, 255, 0.1);
+    border: 1px solid rgba(88, 221, 255, 0.3);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tag-chip-add {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 160ms ease;
+}
+
+.tag-chip-add:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.heat-s { color: #ff5e00; font-weight: bold; text-shadow: 0 0 8px rgba(255, 94, 0, 0.4); }
+.heat-a { color: #ff9d00; font-weight: bold; }
+.heat-b { color: var(--accent-strong); font-weight: bold; }
+.heat-c { color: var(--accent); }
+.heat-d { color: var(--muted); }
+
+.fragment-warning {
+    border-color: rgba(255, 111, 125, 0.5);
+    background: linear-gradient(135deg, rgba(255, 111, 125, 0.05), transparent);
+}
+
+.warning-label {
+    color: var(--danger);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fragment-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.fragment-edit-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
 }
 
 @media (max-width: 1180px) {

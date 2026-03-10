@@ -31,6 +31,9 @@ document.querySelector("#ingestForm").addEventListener("submit", onIngestSubmit)
 document.querySelector("#loadScriptBtn").addEventListener("click", onLoadScript);
 document.querySelector("#searchForm").addEventListener("submit", onSearchSubmit);
 document.querySelector("#generateForm").addEventListener("submit", onGenerateSubmit);
+if (document.querySelector("#libraryForm")) {
+  document.querySelector("#libraryForm").addEventListener("submit", onLibrarySubmit);
+}
 
 refreshHealth();
 
@@ -93,6 +96,47 @@ async function onLoadScript() {
     renderScript(detail);
   } catch (error) {
     ingestLog.textContent = `加载失败：${error.message}`;
+  }
+}
+
+async function onLibrarySubmit(event) {
+  event.preventDefault();
+  const formData = new FormData(event.currentTarget);
+  const tags = String(formData.get("tags") || "").trim();
+  const heatLevel = String(formData.get("heatLevel") || "S,A").trim();
+  const params = new URLSearchParams({ size: 20 });
+  if (tags) params.set("tags", tags);
+  if (heatLevel) params.set("heatLevel", heatLevel);
+
+  const libraryResults = document.querySelector("#libraryResults");
+  libraryResults.innerHTML = '<div class="empty-state">加载中...</div>';
+
+  try {
+    const page = await requestJson(`/api/v1/scripts?${params.toString()}`);
+    const list = page.content || [];
+    if (!list.length) {
+      libraryResults.innerHTML = '<div class="empty-state">未找到匹配的素材</div>';
+      return;
+    }
+    libraryResults.innerHTML = list.map(script => {
+      const heatClass = script.heatLevel ? script.heatLevel.toLowerCase() : 'd';
+      const tagsHtml = script.tags && script.tags.length ? script.tags.map(t => t.name).join(", ") : "无";
+      return `
+      <article class="result-item">
+        <div class="result-head">
+           <span class="heat-${heatClass}">🔥 Level ${escapeHtml(script.heatLevel || 'D')} (Score: ${Number(script.heatScore || 0).toFixed(2)})</span>
+           <button class="ghost-btn" style="padding: 4px 10px; font-size: 13px;" onclick="javascript:document.querySelector('#scriptUuidInput').value='${escapeHtml(script.scriptUuid)}'; document.querySelector('#loadScriptBtn').click(); document.querySelector('#scriptUuidInput').scrollIntoView({ behavior: 'smooth', block: 'start' });">查看详情</button>
+        </div>
+        <strong>${escapeHtml(script.title || "未命名脚本")}</strong>
+        <div class="result-meta" style="margin-top: 8px;">
+           UUID: ${escapeHtml(script.scriptUuid)}<br>
+           标签: ${tagsHtml}
+        </div>
+      </article>
+      `;
+    }).join("");
+  } catch (error) {
+    libraryResults.innerHTML = `<div class="empty-state">加载失败：${escapeHtml(error.message)}</div>`;
   }
 }
 
@@ -162,9 +206,14 @@ async function pollScript(scriptUuid) {
 
 function renderScript(detail) {
   state.latestScriptUuid = detail.scriptUuid;
+  window.currentScriptData = detail; // For easy editing access
   fragmentMetric.textContent = String(detail.fragments.length);
   scriptStatusTag.textContent = detail.status;
   scriptStatusTag.className = `panel-tag ${detail.status === "COMPLETED" ? "status-ok" : ""}`;
+
+  const heatLevel = detail.heatLevel || 'D';
+  const heatScore = Number(detail.heatScore || 0).toFixed(2);
+  const heatClass = heatLevel.toLowerCase();
 
   scriptMeta.innerHTML = `
     <h3>${escapeHtml(detail.title || "未命名脚本")}</h3>
@@ -175,16 +224,19 @@ function renderScript(detail) {
         <strong>${escapeHtml(detail.scriptUuid)}</strong>
       </div>
       <div class="meta-block">
-        <span>Status</span>
-        <strong>${escapeHtml(detail.status)}</strong>
+        <span>Status / Heat</span>
+        <strong>${escapeHtml(detail.status)} <br><span class="heat-${heatClass}">🔥 Level ${escapeHtml(heatLevel)} (Score: ${heatScore})</span></strong>
       </div>
       <div class="meta-block">
         <span>Source</span>
         <strong>${escapeHtml(detail.sourcePlatform || "-")} / ${escapeHtml(detail.externalId || "-")}</strong>
       </div>
       <div class="meta-block">
-        <span>Statistics</span>
-        <strong>${escapeHtml(JSON.stringify(detail.statistics || {}, null, 2))}</strong>
+        <span>Tags (${detail.tags ? detail.tags.length : 0})</span>
+        <div class="tag-list" id="scriptTagsList">
+          ${(detail.tags || []).map(t => `<span class="tag-chip">${escapeHtml(t.name)}</span>`).join("")}
+          <button class="tag-chip tag-chip-add" onclick="addTagPrompt('${escapeHtml(detail.scriptUuid)}')">+ 添加标签</button>
+        </div>
       </div>
     </div>
   `;
@@ -196,17 +248,89 @@ function renderScript(detail) {
 
   fragmentList.innerHTML = detail.fragments
     .map(
-      (fragment) => `
-        <article class="fragment-item">
+      (fragment) => {
+        const isWarning = fragment.confidence && fragment.confidence <= 0.5;
+        const confidenceLabel = isWarning
+          ? '<span class="warning-label">⚠️ AI置信度偏低</span>'
+          : `<span class="warning-label" style="color:var(--muted)">置信度: ${fragment.confidence || 0}</span>`;
+
+        return `
+        <article class="fragment-item ${isWarning ? 'fragment-warning' : ''}" id="frag-${fragment.id}">
           <div class="fragment-head">
             <span class="fragment-type">${escapeHtml(fragment.type)}</span>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                ${confidenceLabel}
+                <button class="ghost-btn" style="padding: 4px 10px; font-size: 12px;" onclick="editFragment(${fragment.id})">人工校正</button>
+            </div>
           </div>
           <div class="fragment-content">${escapeHtml(fragment.content)}</div>
           <div class="fragment-desc">${escapeHtml(fragment.logicDesc || "无逻辑描述")}</div>
         </article>
-      `
+      `}
     )
     .join("");
+}
+
+window.addTagPrompt = async function (uuid) {
+  const tagName = prompt("请输入要添加的标签名称:");
+  if (!tagName) return;
+  const category = prompt("请输入分类标签 (如 INDUSTRY, EMOTION, AUDIENCE, STYLE, PLATFORM) [默认: STYLE]:") || "STYLE";
+  try {
+    await requestJson(`/api/v1/scripts/${uuid}/tags`, {
+      method: "POST",
+      body: JSON.stringify([{
+        name: tagName.trim(),
+        category: category.trim().toUpperCase()
+      }])
+    });
+    document.querySelector('#loadScriptBtn').click();
+  } catch (e) {
+    alert("添加失败: " + e.message);
+  }
+}
+
+window.editFragment = function (id) {
+  const frag = window.currentScriptData.fragments.find(f => f.id === id);
+  if (!frag) return;
+
+  const container = document.querySelector("#frag-" + id);
+  container.innerHTML = `
+    <form class="fragment-edit-form" onsubmit="saveFragment(event, ${id})">
+      <label>碎片类型: <input name="type" value="${escapeHtml(frag.type)}"></label>
+      <label>文案片段: <textarea name="content" rows="4">${escapeHtml(frag.content)}</textarea></label>
+      <label>逻辑描述: <textarea name="logicDesc" rows="3">${escapeHtml(frag.logicDesc || "")}</textarea></label>
+      <div class="fragment-edit-actions">
+        <button type="button" class="ghost-btn" style="padding: 6px 14px; font-size: 13px;" onclick="document.querySelector('#loadScriptBtn').click()">取消</button>
+        <button type="submit" class="primary-btn" style="padding: 6px 14px; font-size: 13px;">保存修改</button>
+      </div>
+    </form>
+  `;
+};
+
+window.saveFragment = async function (event, id) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const payload = {
+    type: form.querySelector('[name=type]').value.trim().toUpperCase(),
+    content: form.querySelector('[name=content]').value.trim(),
+    logicDesc: form.querySelector('[name=logicDesc]').value.trim()
+  };
+
+  const submitBtn = form.querySelector('button[type="submit"]');
+  submitBtn.textContent = '保存中...';
+  submitBtn.disabled = true;
+
+  try {
+    await requestJson(`/api/v1/fragments/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload)
+    });
+    document.querySelector('#loadScriptBtn').click();
+  } catch (e) {
+    alert("保存失败: " + e.message);
+    submitBtn.textContent = '保存修改';
+    submitBtn.disabled = false;
+  }
 }
 
 function renderSearchResults(items) {
@@ -221,7 +345,7 @@ function renderSearchResults(items) {
         <article class="result-item">
           <div class="result-head">
             <span class="fragment-type">${escapeHtml(item.type)}</span>
-            <button class="ghost-btn" data-script-uuid="${escapeHtml(item.scriptUuid)}">查看脚本</button>
+            <button class="ghost-btn" style="padding: 4px 10px; font-size: 13px;" data-script-uuid="${escapeHtml(item.scriptUuid)}">查看来源脚本</button>
           </div>
           <strong>${escapeHtml(item.title || "未命名脚本")}</strong>
           <div class="result-content">${escapeHtml(item.content)}</div>
@@ -238,6 +362,7 @@ function renderSearchResults(items) {
   searchResults.querySelectorAll("[data-script-uuid]").forEach((button) => {
     button.addEventListener("click", async () => {
       scriptUuidInput.value = button.dataset.scriptUuid;
+      scriptUuidInput.scrollIntoView({ behavior: "smooth", block: "start" });
       await onLoadScript();
     });
   });

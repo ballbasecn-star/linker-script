@@ -137,6 +137,7 @@ public class ScriptService {
 
     private LogicFragmentDto toFragmentDto(LogicFragmentEntity fragment) {
         return new LogicFragmentDto(
+                fragment.getId(),
                 fragment.getFragmentType(),
                 fragment.getContent(),
                 fragment.getLogicDesc(),
