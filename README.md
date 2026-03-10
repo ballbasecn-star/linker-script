@@ -2,14 +2,16 @@
 
 基于 `doc/prd` 和 `doc/LinkScript 技术设计文档 (TDD)-phase1` 实现的 Phase 1 后端 MVP。
 
-## 已实现能力
+## 已实现能力 (包括 v1.1 质量基建)
 
-- 素材摄取：`POST /api/v1/scripts/ingest`
-- 异步分析：摄取后发布事件，后台拆解逻辑碎片
-- 碎片存储：写入 `ls_script`、`ls_logic_fragment`、`ls_generation_log`
+- 素材摄取：`POST /api/v1/scripts/ingest` (自动计算爆款评分 Heat Score)
+- 异步分析：AI 拆解逻辑碎片并返回置信度 (Confidence)，同时进行 AI 自动打标 (行业/情绪/受众)
+- 碎片存储：写入 `ls_script`、`ls_logic_fragment`、`ls_generation_log`、`ls_tag`、`ls_script_tag`
+- 碎片校正：`PUT /api/v1/fragments/{id}` (手动修正 AI 拆解错的碎片)
 - 语义检索：`GET /api/v1/fragments/search`
+- 素材筛选：`GET /api/v1/scripts` (支持按标签 `tags` 和热度 `heatLevel` 分页筛选)
 - 文案生成：`POST /api/v1/compositions/generate`
-- 详情查询：`GET /api/v1/scripts/{scriptUuid}`
+- 详情查询：`GET /api/v1/scripts/{scriptUuid}` (返回关联标签及热度分数)
 
 ## 技术说明
 
@@ -118,13 +120,31 @@ curl -X POST http://localhost:8080/api/v1/scripts/ingest \
   }'
 ```
 
-### 2. 搜索 Hook
+### 2. 素材列表筛选 (v1.1 新增)
+
+```bash
+curl 'http://localhost:8080/api/v1/scripts?tags=职场,焦虑&heatLevel=S,A&page=0&size=20'
+```
+
+### 3. 校正碎片 (v1.1 新增)
+
+```bash
+curl -X PUT http://localhost:8080/api/v1/fragments/1 \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "type": "HOOK",
+    "content": "修改后的钩子文案",
+    "logicDesc": "修正描述"
+  }'
+```
+
+### 4. 搜索 Hook
 
 ```bash
 curl 'http://localhost:8080/api/v1/fragments/search?topic=%E8%81%8C%E5%9C%BA%E7%84%A6%E8%99%91&type=HOOK&limit=3'
 ```
 
-### 3. 生成文案
+### 5. 生成文案
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/compositions/generate \
