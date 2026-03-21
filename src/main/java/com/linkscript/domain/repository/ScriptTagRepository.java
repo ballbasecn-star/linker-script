@@ -11,6 +11,8 @@ public interface ScriptTagRepository extends JpaRepository<ScriptTagEntity, Scri
 
     List<ScriptTagEntity> findByScriptUuid(String scriptUuid);
 
+    List<ScriptTagEntity> findByScriptUuidIn(Collection<String> scriptUuids);
+
     void deleteByScriptUuidAndTagId(String scriptUuid, Long tagId);
 
     @Query("SELECT DISTINCT st.scriptUuid FROM ScriptTagEntity st WHERE st.tagId IN :tagIds")

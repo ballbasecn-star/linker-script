@@ -17,6 +17,7 @@ public record ScriptDetailResponse(
                 Double heatScore,
                 String heatLevel,
                 LocalDateTime createdAt,
+                ScriptReviewDto review,
                 List<LogicFragmentDto> fragments,
                 List<TagDto> tags) {
 }

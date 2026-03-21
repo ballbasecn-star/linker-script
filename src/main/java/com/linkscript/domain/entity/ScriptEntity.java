@@ -43,6 +43,10 @@ public class ScriptEntity {
     @Column(name = "stats_json", columnDefinition = "JSONB")
     private String statsJson;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "review_json", columnDefinition = "JSONB")
+    private String reviewJson;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ScriptStatus status;
@@ -129,6 +133,14 @@ public class ScriptEntity {
 
     public void setStatus(ScriptStatus status) {
         this.status = status;
+    }
+
+    public String getReviewJson() {
+        return reviewJson;
+    }
+
+    public void setReviewJson(String reviewJson) {
+        this.reviewJson = reviewJson;
     }
 
     public Double getHeatScore() {

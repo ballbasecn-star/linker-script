@@ -113,7 +113,7 @@ async function onLibrarySubmit(event) {
 
   try {
     const page = await requestJson(`/api/v1/scripts?${params.toString()}`);
-    const list = page.content || [];
+    const list = Array.isArray(page) ? page : (page.content || []);
     if (!list.length) {
       libraryResults.innerHTML = '<div class="empty-state">未找到匹配的素材</div>';
       return;
@@ -239,6 +239,7 @@ function renderScript(detail) {
         </div>
       </div>
     </div>
+    ${renderReview(detail.review)}
   `;
 
   if (!detail.fragments.length) {
@@ -278,10 +279,11 @@ window.addTagPrompt = async function (uuid) {
   try {
     await requestJson(`/api/v1/scripts/${uuid}/tags`, {
       method: "POST",
-      body: JSON.stringify([{
-        name: tagName.trim(),
-        category: category.trim().toUpperCase()
-      }])
+      body: JSON.stringify({
+        tags: {
+          [category.trim().toUpperCase()]: [tagName.trim()]
+        }
+      })
     });
     document.querySelector('#loadScriptBtn').click();
   } catch (e) {
@@ -376,6 +378,93 @@ function renderGeneration(body) {
       引用样本: ${escapeHtml((body.referenceUuids || []).join(", ") || "自动选择")}
     </div>
     <div class="generation-body">${escapeHtml(body.content || "")}</div>
+  `;
+}
+
+function renderReview(review) {
+  if (!review) {
+    return `
+      <section class="review-card">
+        <div class="review-head">
+          <h4>精选候选点评</h4>
+          <span class="review-badge pending">等待分析</span>
+        </div>
+        <div class="empty-state">当前脚本还没有点评结果</div>
+      </section>
+    `;
+  }
+
+  const featuredClass = review.featuredCandidate ? "featured" : "not-featured";
+  const riskFlags = Array.isArray(review.riskFlags) ? review.riskFlags : [];
+
+  return `
+    <section class="review-card">
+      <div class="review-head">
+        <div>
+          <h4>精选候选点评</h4>
+          <p>${escapeHtml(review.summary || "暂无摘要")}</p>
+        </div>
+        <div class="review-score-wrap">
+          <span class="review-badge ${featuredClass}">${review.featuredCandidate ? "精选候选" : "待优化"}</span>
+          <strong>${Number(review.overallScore || 0)}</strong>
+        </div>
+      </div>
+      <div class="review-meta">
+        <div class="meta-block">
+          <span>结论</span>
+          <strong>${escapeHtml(review.featuredConclusion || "-")}</strong>
+        </div>
+        <div class="meta-block">
+          <span>原因</span>
+          <strong>${escapeHtml(review.featuredReason || "-")}</strong>
+        </div>
+      </div>
+      <div class="review-score-grid">
+        ${renderReviewMetric("完整度", review.completenessScore)}
+        ${renderReviewMetric("获得感", review.gainScore)}
+        ${renderReviewMetric("惊喜感", review.surpriseScore)}
+        ${renderReviewMetric("真实性", review.authenticityScore)}
+        ${renderReviewMetric("专业度", review.professionalismScore)}
+        ${renderReviewMetric("可信度", review.credibilityScore)}
+        ${renderReviewMetric("有趣度", review.interestingnessScore)}
+      </div>
+      <div class="review-columns">
+        ${renderReviewList("亮点", review.highlights)}
+        ${renderReviewList("问题", review.issues)}
+        ${renderReviewList("建议", review.suggestions)}
+      </div>
+      <div class="review-risk-row">
+        <span>风险项</span>
+        <div class="tag-list">
+          ${riskFlags.length
+            ? riskFlags.map(flag => `<span class="tag-chip tag-chip-risk">${escapeHtml(flag)}</span>`).join("")
+            : '<span class="tag-chip">未发现明显风险</span>'}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderReviewMetric(label, value) {
+  const score = Number(value || 0);
+  return `
+    <article class="review-metric">
+      <span>${escapeHtml(label)}</span>
+      <strong>${score}</strong>
+      <div class="review-meter"><i style="width:${Math.max(0, Math.min(100, score))}%"></i></div>
+    </article>
+  `;
+}
+
+function renderReviewList(title, items) {
+  const list = Array.isArray(items) ? items.filter(Boolean) : [];
+  return `
+    <section class="review-list-block">
+      <h5>${escapeHtml(title)}</h5>
+      ${list.length
+        ? `<ul>${list.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+        : '<div class="empty-inline">暂无</div>'}
+    </section>
   `;
 }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkscript.core.tag.TagService;
 import com.linkscript.core.vector.EmbeddingService;
+import com.linkscript.domain.dto.ScriptReviewDto;
 import com.linkscript.domain.entity.FragmentType;
 import com.linkscript.domain.entity.ScriptEntity;
 import com.linkscript.domain.entity.TagCategory;
@@ -54,6 +55,7 @@ public class AnalysisService {
     private final LogicFragmentJdbcRepository logicFragmentJdbcRepository;
     private final EmbeddingService embeddingService;
     private final FallbackScriptAnalyzer fallbackScriptAnalyzer;
+    private final ContentReviewService contentReviewService;
     private final AiGateway aiGateway;
     private final ObjectMapper objectMapper;
     private final TagService tagService;
@@ -64,6 +66,7 @@ public class AnalysisService {
             LogicFragmentJdbcRepository logicFragmentJdbcRepository,
             EmbeddingService embeddingService,
             FallbackScriptAnalyzer fallbackScriptAnalyzer,
+            ContentReviewService contentReviewService,
             AiGateway aiGateway,
             ObjectMapper objectMapper,
             TagService tagService) {
@@ -72,6 +75,7 @@ public class AnalysisService {
         this.logicFragmentJdbcRepository = logicFragmentJdbcRepository;
         this.embeddingService = embeddingService;
         this.fallbackScriptAnalyzer = fallbackScriptAnalyzer;
+        this.contentReviewService = contentReviewService;
         this.aiGateway = aiGateway;
         this.objectMapper = objectMapper;
         this.tagService = tagService;
@@ -108,6 +112,14 @@ public class AnalysisService {
                     fragment.confidence());
         }
         log.info("analysis.pipeline.end scriptUuid={} persistedFragments={}", scriptUuid, uniqueFragments.size());
+
+        ScriptReviewDto review = contentReviewService.review(script, uniqueFragments);
+        script.setReviewJson(writeJson(review));
+        scriptRepository.save(script);
+        log.info("analysis.review.persisted scriptUuid={} featuredCandidate={} overallScore={}",
+                scriptUuid,
+                review.featuredCandidate(),
+                review.overallScore());
 
         // Auto-tagging phase
         autoTag(scriptUuid, script);
@@ -245,5 +257,16 @@ public class AnalysisService {
 
     private String defaultString(String value) {
         return value == null ? "" : value;
+    }
+
+    private String writeJson(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception exception) {
+            return null;
+        }
     }
 }

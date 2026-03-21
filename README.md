@@ -1,6 +1,23 @@
-# LinkScript MVP
+# LinkScript
 
-基于 `doc/prd` 和 `doc/LinkScript 技术设计文档 (TDD)-phase1` 实现的 Phase 1 后端 MVP。
+LinkScript 是一个面向短视频创作团队的脚本分析与再生产平台，用于把素材沉淀成可拆解、可检索、可生成的结构化内容资产。
+
+当前仓库已经切换到“人类 + AI”长期协作方式：
+
+- 协作入口：[`AGENTS.md`](/Users/apple/Project/linker-script/AGENTS.md)
+- 产品事实：[`docs/product/prd.md`](/Users/apple/Project/linker-script/docs/product/prd.md)
+- 当前阶段：[`docs/roadmap/current.md`](/Users/apple/Project/linker-script/docs/roadmap/current.md)
+- 架构入口：[`docs/architecture/overview.md`](/Users/apple/Project/linker-script/docs/architecture/overview.md)
+- 开发流程：[`docs/operations/development-workflow.md`](/Users/apple/Project/linker-script/docs/operations/development-workflow.md)
+
+说明：
+
+- `docs/` 是当前维护中的协作文档体系，也是后续 AI 协作的主要事实来源。
+- 早期 `doc/` 目录中的 PRD/TDD 内容已经收敛进 `docs/`，后续不再维护旧目录。
+
+## 项目现状
+
+项目起步于早期 PRD/TDD 设计稿，当前已整理为 `docs/` 下的长期协作文档，并在此基础上补了接口契约、日志、点评、测试与部署文档。
 
 ## 已实现能力 (包括 v1.1 质量基建)
 
@@ -75,8 +92,8 @@ export OPENAI_CHAT_MODEL='Pro/zai-org/GLM-4.7'
 export OPENAI_EMBEDDING_MODEL='Qwen/Qwen3-Embedding-8B'
 ```
 
-`dev` profile 默认已经对齐 SiliconFlow：
-- chat: `Pro/zai-org/GLM-4.7`
+`dev` profile 默认已经对齐 SiliconFlow 兼容接口：
+- chat: `Pro/moonshotai/Kimi-K2.5`
 - embedding: `Qwen/Qwen3-Embedding-8B`
 
 如果 embedding 或 chat 接口不可用，系统仍会自动退化到本地 embedding fallback、规则拆解和模板生成模式。

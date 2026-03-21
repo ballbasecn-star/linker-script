@@ -4,18 +4,25 @@ import com.linkscript.core.script.ScriptService;
 import com.linkscript.core.tag.TagService;
 import com.linkscript.core.vector.VectorSearchService;
 import com.linkscript.domain.dto.FragmentSearchResponse;
+import com.linkscript.domain.dto.PageResponse;
 import com.linkscript.domain.dto.ScriptDetailResponse;
+import com.linkscript.domain.dto.ScriptSummaryResponse;
+import com.linkscript.domain.dto.TagDto;
 import com.linkscript.domain.entity.FragmentType;
 import com.linkscript.domain.entity.LogicFragmentEntity;
+import com.linkscript.domain.entity.ScriptEntity;
 import com.linkscript.domain.repository.LogicFragmentRepository;
 import com.linkscript.domain.repository.ScriptRepository;
-import com.linkscript.domain.entity.ScriptEntity;
 import com.linkscript.infra.exception.NotFoundException;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -55,41 +62,47 @@ public class ScriptController {
     }
 
     @GetMapping("/scripts")
-    public List<ScriptSummaryResponse> listScripts(
+    public PageResponse<ScriptSummaryResponse> listScripts(
             @RequestParam(required = false) String tags,
             @RequestParam(required = false) String heatLevel,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
         List<String> targetUuids = null;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        // Filter by tags if provided
         if (tags != null && !tags.isBlank()) {
-            List<String> tagNames = Arrays.asList(tags.split(","));
+            List<String> tagNames = Arrays.stream(tags.split(","))
+                    .map(String::trim)
+                    .filter(value -> !value.isEmpty())
+                    .toList();
             targetUuids = tagService.findScriptUuidsByTagNames(tagNames);
             if (targetUuids.isEmpty()) {
-                return List.of();
+                return new PageResponse<>(List.of(), page, size, 0, 0, true, true);
             }
         }
 
-        // Filter by heat level if provided
         List<String> heatLevels = null;
         if (heatLevel != null && !heatLevel.isBlank()) {
-            heatLevels = Arrays.asList(heatLevel.split(","));
+            heatLevels = Arrays.stream(heatLevel.split(","))
+                    .map(String::trim)
+                    .filter(value -> !value.isEmpty())
+                    .toList();
         }
 
-        List<ScriptEntity> scripts;
+        Page<ScriptEntity> scripts;
         if (targetUuids != null && heatLevels != null) {
-            scripts = scriptRepository.findByScriptUuidInAndHeatLevelIn(targetUuids, heatLevels,
-                    PageRequest.of(page, size));
+            scripts = scriptRepository.findByScriptUuidInAndHeatLevelIn(targetUuids, heatLevels, pageable);
         } else if (targetUuids != null) {
-            scripts = scriptRepository.findByScriptUuidIn(targetUuids, PageRequest.of(page, size));
+            scripts = scriptRepository.findByScriptUuidIn(targetUuids, pageable);
         } else if (heatLevels != null) {
-            scripts = scriptRepository.findByHeatLevelIn(heatLevels, PageRequest.of(page, size));
+            scripts = scriptRepository.findByHeatLevelIn(heatLevels, pageable);
         } else {
-            scripts = scriptRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size));
+            scripts = scriptRepository.findAllByOrderByCreatedAtDesc(pageable);
         }
 
-        return scripts.stream()
+        Map<String, List<TagDto>> tagsByScript = tagService.getTagsByScripts(
+                scripts.getContent().stream().map(ScriptEntity::getScriptUuid).toList());
+        List<ScriptSummaryResponse> content = scripts.getContent().stream()
                 .map(s -> new ScriptSummaryResponse(
                         s.getScriptUuid(),
                         s.getTitle(),
@@ -97,8 +110,18 @@ public class ScriptController {
                         s.getStatus().name(),
                         s.getHeatScore(),
                         s.getHeatLevel(),
-                        s.getCreatedAt()))
+                        s.getCreatedAt(),
+                        tagsByScript.getOrDefault(s.getScriptUuid(), List.of())))
                 .toList();
+
+        return new PageResponse<>(
+                content,
+                scripts.getNumber(),
+                scripts.getSize(),
+                scripts.getTotalElements(),
+                scripts.getTotalPages(),
+                scripts.isFirst(),
+                scripts.isLast());
     }
 
     @GetMapping("/fragments/search")
@@ -131,15 +154,5 @@ public class ScriptController {
     }
 
     public record UpdateFragmentResponse(Long id, FragmentType type, String content, String logicDesc) {
-    }
-
-    public record ScriptSummaryResponse(
-            String scriptUuid,
-            String title,
-            String sourcePlatform,
-            String status,
-            Double heatScore,
-            String heatLevel,
-            java.time.LocalDateTime createdAt) {
     }
 }

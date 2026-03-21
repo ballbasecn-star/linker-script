@@ -26,15 +26,15 @@ linkscript:
   ai:
     enabled: ${LINKSCRIPT_AI_ENABLED:true}
     api-key: ${OPENAI_API_KEY:}
-    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
-    chat-model: ${OPENAI_CHAT_MODEL:gpt-4.1-mini}
-    embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+    base-url: ${OPENAI_BASE_URL:https://api.siliconflow.cn/v1}
+    chat-model: ${OPENAI_CHAT_MODEL:Pro/zai-org/GLM-4.7}
+    embedding-model: ${OPENAI_EMBEDDING_MODEL:Qwen/Qwen3-Embedding-8B}
     temperature: ${OPENAI_TEMPERATURE:0.7}
     connect-timeout-seconds: ${LINKSCRIPT_AI_CONNECT_TIMEOUT:10}
     read-timeout-seconds: ${LINKSCRIPT_AI_READ_TIMEOUT:60}
     max-retries: ${LINKSCRIPT_AI_MAX_RETRIES:2}
   vector:
-    dimensions: ${LINKSCRIPT_VECTOR_DIMENSIONS:1536}
+    dimensions: ${LINKSCRIPT_VECTOR_DIMENSIONS:4096}
     lexical-candidate-limit: ${LINKSCRIPT_LEXICAL_CANDIDATE_LIMIT:200}
   logging:
     enabled: ${LINKSCRIPT_LOGGING_ENABLED:true}

@@ -8,8 +8,10 @@ services:
     environment:
       JAVA_OPTS: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
       DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
       OPENAI_CHAT_MODEL: ${OPENAI_MODEL}
-      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-Qwen/Qwen3-Embedding-8B}
+      LINKSCRIPT_VECTOR_DIMENSIONS: ${LINKSCRIPT_VECTOR_DIMENSIONS:-4096}
       SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
       LINKSCRIPT_AI_READ_TIMEOUT: "180"
     # Port is not exported directly, relies on shared-proxy for Nginx routing

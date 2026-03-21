@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://${PGHOST:117.72.207.52}:${PGPORT:5432}/${PGDATABASE:postgres}
-    username: ${PGUSER:postgres}
-    password: ${PGPASSWORD:}
+    username: ${PGUSER:${DB_USERNAME:${DB_USER:postgres}}}
+    password: ${PGPASSWORD:${DB_PASSWORD:${POSTGRES_PASSWORD:}}}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -17,12 +17,15 @@ linkscript:
     enabled: ${LINKSCRIPT_AI_ENABLED:true}
     api-key: ${OPENAI_API_KEY:}
     base-url: ${OPENAI_BASE_URL:https://api.siliconflow.cn/v1}
-    chat-model: ${OPENAI_CHAT_MODEL:Pro/zai-org/GLM-4.7}
+    chat-model: ${OPENAI_CHAT_MODEL:Pro/moonshotai/Kimi-K2.5}
     embedding-model: ${OPENAI_EMBEDDING_MODEL:Qwen/Qwen3-Embedding-8B}
     temperature: ${OPENAI_TEMPERATURE:0.7}
     connect-timeout-seconds: ${LINKSCRIPT_AI_CONNECT_TIMEOUT:10}
     read-timeout-seconds: ${LINKSCRIPT_AI_READ_TIMEOUT:90}
     max-retries: ${LINKSCRIPT_AI_MAX_RETRIES:2}
+  vector:
+    dimensions: ${LINKSCRIPT_VECTOR_DIMENSIONS:4096}
+    lexical-candidate-limit: ${LINKSCRIPT_LEXICAL_CANDIDATE_LIMIT:200}
   logging:
     enabled: ${LINKSCRIPT_LOGGING_ENABLED:true}
     max-payload-length: ${LINKSCRIPT_LOGGING_MAX_PAYLOAD_LENGTH:1600}

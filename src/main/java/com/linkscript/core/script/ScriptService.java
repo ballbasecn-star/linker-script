@@ -9,6 +9,7 @@ import com.linkscript.domain.dto.IngestScriptRequest;
 import com.linkscript.domain.dto.IngestScriptResponse;
 import com.linkscript.domain.dto.LogicFragmentDto;
 import com.linkscript.domain.dto.ScriptDetailResponse;
+import com.linkscript.domain.dto.ScriptReviewDto;
 import com.linkscript.domain.dto.TagDto;
 import com.linkscript.domain.entity.LogicFragmentEntity;
 import com.linkscript.domain.entity.ScriptEntity;
@@ -67,6 +68,7 @@ public class ScriptService {
         entity.setSourcePlatform(request.sourcePlatform());
         entity.setExternalId(request.externalId());
         entity.setStatsJson(toJson(request.statistics()));
+        entity.setReviewJson(null);
         entity.setStatus(ScriptStatus.PENDING);
 
         // Calculate heat score from statistics
@@ -102,6 +104,7 @@ public class ScriptService {
                 script.getHeatScore(),
                 script.getHeatLevel(),
                 script.getCreatedAt(),
+                readReview(script.getReviewJson()),
                 fragments,
                 tags);
     }
@@ -163,6 +166,17 @@ public class ScriptService {
             return objectMapper.readTree(json);
         } catch (IOException exception) {
             return objectMapper.createObjectNode();
+        }
+    }
+
+    private ScriptReviewDto readReview(String json) {
+        if (!StringUtils.hasText(json)) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(json, ScriptReviewDto.class);
+        } catch (IOException exception) {
+            return null;
         }
     }
 }

@@ -8,6 +8,8 @@ import com.linkscript.domain.repository.ScriptTagRepository;
 import com.linkscript.domain.repository.TagRepository;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -43,6 +45,9 @@ public class TagService {
 
     @Transactional
     public void tagScript(String scriptUuid, Map<TagCategory, List<String>> tagsByCategory, String source) {
+        if (tagsByCategory == null || tagsByCategory.isEmpty()) {
+            return;
+        }
         for (Map.Entry<TagCategory, List<String>> entry : tagsByCategory.entrySet()) {
             TagCategory category = entry.getKey();
             for (String tagName : entry.getValue()) {
@@ -85,6 +90,41 @@ public class TagService {
             result.add(new TagDto(tag.getId(), tag.getName(), tag.getCategory().name(),
                     sourceMap.getOrDefault(tag.getId(), "AI")));
         }
+        result.sort(Comparator.comparing(TagDto::category).thenComparing(TagDto::name));
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, List<TagDto>> getTagsByScripts(Collection<String> scriptUuids) {
+        if (scriptUuids == null || scriptUuids.isEmpty()) {
+            return Map.of();
+        }
+
+        List<ScriptTagEntity> scriptTags = scriptTagRepository.findByScriptUuidIn(scriptUuids);
+        if (scriptTags.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> tagIds = scriptTags.stream()
+                .map(ScriptTagEntity::getTagId)
+                .distinct()
+                .toList();
+        Map<Long, TagEntity> tagsById = tagRepository.findByIdIn(tagIds).stream()
+                .collect(java.util.stream.Collectors.toMap(TagEntity::getId, tag -> tag));
+
+        Map<String, List<TagDto>> result = new LinkedHashMap<>();
+        for (ScriptTagEntity scriptTag : scriptTags) {
+            TagEntity tag = tagsById.get(scriptTag.getTagId());
+            if (tag == null) {
+                continue;
+            }
+            result.computeIfAbsent(scriptTag.getScriptUuid(), ignored -> new ArrayList<>())
+                    .add(new TagDto(tag.getId(), tag.getName(), tag.getCategory().name(), scriptTag.getSource()));
+        }
+
+        result.values().forEach(tags -> tags.sort(Comparator
+                .comparing(TagDto::category)
+                .thenComparing(TagDto::name)));
         return result;
     }
 
@@ -100,11 +140,15 @@ public class TagService {
     public List<String> findScriptUuidsByTagNames(Collection<String> tagNames) {
         List<TagEntity> tags = new ArrayList<>();
         for (String name : tagNames) {
-            tagRepository.findByNameAndCategory(name, TagCategory.INDUSTRY).ifPresent(tags::add);
-            tagRepository.findByNameAndCategory(name, TagCategory.EMOTION).ifPresent(tags::add);
-            tagRepository.findByNameAndCategory(name, TagCategory.AUDIENCE).ifPresent(tags::add);
-            tagRepository.findByNameAndCategory(name, TagCategory.PLATFORM).ifPresent(tags::add);
-            tagRepository.findByNameAndCategory(name, TagCategory.STYLE).ifPresent(tags::add);
+            String trimmed = name == null ? "" : name.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            tagRepository.findByNameAndCategory(trimmed, TagCategory.INDUSTRY).ifPresent(tags::add);
+            tagRepository.findByNameAndCategory(trimmed, TagCategory.EMOTION).ifPresent(tags::add);
+            tagRepository.findByNameAndCategory(trimmed, TagCategory.AUDIENCE).ifPresent(tags::add);
+            tagRepository.findByNameAndCategory(trimmed, TagCategory.PLATFORM).ifPresent(tags::add);
+            tagRepository.findByNameAndCategory(trimmed, TagCategory.STYLE).ifPresent(tags::add);
         }
         if (tags.isEmpty()) {
             return List.of();
