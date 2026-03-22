@@ -4,223 +4,228 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LinkScript Console</title>
+    <!-- Use a modern font like Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<div class="page-shell">
-    <div class="orb orb-left"></div>
-    <div class="orb orb-right"></div>
-    <div class="grid-mask"></div>
+    <nav class="dashboard-header">
+        <div class="nav-content">
+            <div class="brand-area">
+                <div class="brand-logo">L</div>
+                <span class="brand-text">LinkScript</span>
+            </div>
+            <div class="status-area">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span id="healthStatus">Ready</span>
+                    <small id="healthHint" style="display:none;"></small>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-    <header class="hero">
-        <div class="hero-copy">
-            <p class="eyebrow">LINKSCRIPT CREATIVE SYSTEM</p>
-            <h1>把素材库变成会分析、会检索、会生成的创意中枢</h1>
-            <p class="hero-text">
-                面向短视频脚本的爆款逻辑台。导入素材后，系统自动拆出钩子、铺垫、价值和 CTA，
-                再基于向量检索与样本驱动生成，给出可继续编辑的创作结果。
-            </p>
-            <div class="hero-actions">
-                <button class="primary-btn" data-scroll-target="#ingest-panel">开始导入素材</button>
-                <button class="ghost-btn" data-scroll-target="#generate-panel">直接进入生成台</button>
+    <div class="hero-stats">
+        <div class="hero-content">
+            <h1>创意素材中台 Dashboard</h1>
+            <p>导入爆款视频、拆解逻辑链路、检索核心片段，在这里开启极度结构化的创编体验。</p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Ingestion</span>
+                    <strong class="stat-value" id="ingestMetric">0</strong>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Fragments</span>
+                    <strong class="stat-value" id="fragmentMetric">0</strong>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Search Hits</span>
+                    <strong class="stat-value" id="searchMetric">0</strong>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Generations</span>
+                    <strong class="stat-value" id="generationMetric">0</strong>
+                </div>
             </div>
         </div>
-        <div class="hero-status">
-            <div class="status-card status-card-main">
-                <span class="status-label">System Status</span>
-                <strong id="healthStatus">Waiting</strong>
-                <small id="healthHint">检测服务健康中</small>
-            </div>
-            <div class="status-grid">
-                <article class="metric-card">
-                    <span>Ingestion</span>
-                    <strong id="ingestMetric">0</strong>
-                    <small>当前会话导入数</small>
-                </article>
-                <article class="metric-card">
-                    <span>Fragments</span>
-                    <strong id="fragmentMetric">0</strong>
-                    <small>最近脚本碎片数</small>
-                </article>
-                <article class="metric-card">
-                    <span>Search Hits</span>
-                    <strong id="searchMetric">0</strong>
-                    <small>最近检索结果数</small>
-                </article>
-                <article class="metric-card">
-                    <span>Generations</span>
-                    <strong id="generationMetric">0</strong>
-                    <small>当前会话生成数</small>
-                </article>
-            </div>
-        </div>
-    </header>
+    </div>
 
     <main class="console-layout">
-        <section class="panel panel-ingest" id="ingest-panel">
-            <div class="panel-header">
-                <div>
-                    <p class="panel-kicker">01 / Ingestion</p>
-                    <h2>素材导入与异步分析</h2>
-                </div>
-                <span class="panel-tag">Parser Ready</span>
-            </div>
-            <form id="ingestForm" class="form-stack">
-                <label>
-                    <span>标题</span>
-                    <input type="text" name="title" placeholder="例如：别再把项目复盘讲成流水账" required>
-                </label>
-                <label>
-                    <span>来源平台</span>
-                    <input type="text" name="sourcePlatform" value="douyin" required>
-                </label>
-                <label>
-                    <span>外部 ID</span>
-                    <input type="text" name="externalId" placeholder="唯一标识，方便幂等更新">
-                </label>
-                <label>
-                    <span>正文素材</span>
-                    <textarea name="content" rows="8" placeholder="贴入脚本原文，系统会自动拆解逻辑结构" required></textarea>
-                </label>
-                <div class="inline-grid">
-                    <label>
-                        <span>点赞</span>
-                        <input type="number" name="likes" value="0" min="0">
-                    </label>
-                    <label>
-                        <span>分享</span>
-                        <input type="number" name="shares" value="0" min="0">
-                    </label>
-                </div>
-                <button type="submit" class="primary-btn wide-btn">导入并触发分析</button>
-            </form>
-            <div class="panel-log" id="ingestLog">等待导入任务</div>
-        </section>
-
-        <section class="panel panel-library">
-            <div class="panel-header">
-                <div>
-                    <p class="panel-kicker">01.5 / Library</p>
-                    <h2>素材资源库</h2>
-                </div>
-                <span class="panel-tag">Script DB</span>
-            </div>
-            <form id="libraryForm" class="form-stack compact">
-                <div class="inline-grid triple-grid">
-                    <label>
-                        <span>标签筛选</span>
-                        <input type="text" name="tags" placeholder="多标签用逗号分隔，如: 职场,创业">
-                    </label>
-                    <label>
-                        <span>热度筛选</span>
-                        <input type="text" name="heatLevel" value="S,A" placeholder="S,A,B,C,D">
-                    </label>
-                    <div class="action-cell">
-                        <button type="submit" class="primary-btn wide-btn">筛选素材</button>
+        <div class="layout-left">
+            <!-- Panel: Ingest -->
+            <section class="panel-card" id="ingest-panel">
+                <div class="panel-header">
+                    <div class="header-title">
+                        <div class="panel-icon icon-blue"></div>
+                        <h2>素材导入</h2>
                     </div>
                 </div>
-            </form>
-            <div class="result-list" id="libraryResults">
-                <div class="empty-state">输入条件筛选素材库</div>
-            </div>
-        </section>
+                <form id="ingestForm" class="form-stack">
+                    <div class="form-group">
+                        <label>标题</label>
+                        <input type="text" name="title" placeholder="例如：别把项目讲成流水账" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>来源平台</label>
+                            <input type="text" name="sourcePlatform" value="douyin" required>
+                        </div>
+                        <div class="form-group">
+                            <label>外部 ID</label>
+                            <input type="text" name="externalId" placeholder="唯一标识">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>正文素材</label>
+                        <textarea name="content" rows="6" placeholder="贴入脚本原文，系统自动拆解逻辑并打分..." required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>点赞</label>
+                            <input type="number" name="likes" value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>分享</label>
+                            <input type="number" name="shares" value="0" min="0">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">导入并触发分析</button>
+                </form>
+                <div class="panel-log" id="ingestLog">等待导入任务</div>
+            </section>
 
-        <section class="panel panel-analysis">
-            <div class="panel-header">
-                <div>
-                    <p class="panel-kicker">02 / Analysis</p>
-                    <h2>脚本结构与逻辑碎片</h2>
-                </div>
-                <span class="panel-tag" id="scriptStatusTag">No Script</span>
-            </div>
-            <div class="toolbar">
-                <input id="scriptUuidInput" type="text" placeholder="输入 scriptUuid 查询详情">
-                <button id="loadScriptBtn" class="ghost-btn">加载脚本</button>
-            </div>
-            <article class="script-card" id="scriptMeta">
-                <h3>等待脚本</h3>
-                <p>导入素材后，这里会展示标题、状态、统计信息和碎片结构。</p>
-            </article>
-            <div class="fragment-list" id="fragmentList">
-                <div class="empty-state">暂无碎片结果</div>
-            </div>
-        </section>
-
-        <section class="panel panel-search">
-            <div class="panel-header">
-                <div>
-                    <p class="panel-kicker">03 / Retrieval</p>
-                    <h2>爆款 Hook 检索</h2>
-                </div>
-                <span class="panel-tag">Vector Search</span>
-            </div>
-            <form id="searchForm" class="form-stack compact">
-                <label>
-                    <span>检索主题</span>
-                    <input type="text" name="topic" placeholder="例如：职场焦虑、项目汇报、AI工具推广" required>
-                </label>
-                <div class="inline-grid triple-grid">
-                    <label>
-                        <span>类型</span>
-                        <select name="type">
-                            <option value="HOOK">HOOK</option>
-                            <option value="SETUP">SETUP</option>
-                            <option value="VALUE">VALUE</option>
-                            <option value="CTA">CTA</option>
-                            <option value="">全部</option>
-                        </select>
-                    </label>
-                    <label>
-                        <span>条数</span>
-                        <input type="number" name="limit" value="3" min="1" max="10">
-                    </label>
-                    <div class="action-cell">
-                        <button type="submit" class="primary-btn wide-btn">执行检索</button>
+            <!-- Panel: Library Search -->
+            <section class="panel-card mt-card">
+                <div class="panel-header">
+                    <div class="header-title">
+                        <div class="panel-icon icon-emerald"></div>
+                        <h2>素材资源库</h2>
                     </div>
                 </div>
-            </form>
-            <div class="result-list" id="searchResults">
-                <div class="empty-state">暂无检索结果</div>
-            </div>
-        </section>
+                <form id="libraryForm" class="form-stack">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>标签筛选</label>
+                            <input type="text" name="tags" placeholder="多标签用逗号分隔，如: 职场,创业">
+                        </div>
+                        <div class="form-group">
+                            <label>热度筛选</label>
+                            <input type="text" name="heatLevel" value="S,A">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-secondary">筛选素材</button>
+                </form>
+                <div class="result-list" id="libraryResults">
+                    <div class="empty-state">输入条件筛选素材库</div>
+                </div>
+            </section>
+        </div>
 
-        <section class="panel panel-generate" id="generate-panel">
-            <div class="panel-header">
-                <div>
-                    <p class="panel-kicker">04 / Generation</p>
-                    <h2>样本驱动创作台</h2>
+        <div class="layout-right">
+            <!-- Panel: Analysis Detail -->
+            <section class="panel-card">
+                <div class="panel-header">
+                    <div class="header-title">
+                        <div class="panel-icon icon-indigo"></div>
+                        <h2>脚本结构与逻辑碎片</h2>
+                    </div>
+                    <span class="badge badge-normal" id="scriptStatusTag">No Script</span>
                 </div>
-                <span class="panel-tag">Few-shot Lab</span>
+                <div class="toolbar">
+                    <input id="scriptUuidInput" type="text" placeholder="输入 scriptUuid 查询详情 (或点击左侧素材)">
+                    <button id="loadScriptBtn" class="btn-secondary">加载脚本</button>
+                </div>
+                <article class="script-card" id="scriptMeta">
+                    <div class="empty-state">
+                        <h3>等待脚本</h3>
+                        <p>导入或在左侧点击素材，这里会展示标题、状态、统计信息和碎片详情。</p>
+                    </div>
+                </article>
+                <div class="fragment-list" id="fragmentList">
+                    <div class="empty-state">暂无碎片结果</div>
+                </div>
+            </section>
+
+            <div class="bottom-grid">
+                <!-- Panel: Semantic Search -->
+                <section class="panel-card">
+                    <div class="panel-header">
+                        <div class="header-title">
+                            <div class="panel-icon icon-purple"></div>
+                            <h2>爆款 Hook 检索</h2>
+                        </div>
+                    </div>
+                    <form id="searchForm" class="form-stack">
+                        <div class="form-group">
+                            <label>检索主题</label>
+                            <input type="text" name="topic" placeholder="例如：职场焦虑" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>类型</label>
+                                <select name="type">
+                                    <option value="HOOK">HOOK</option>
+                                    <option value="SETUP">SETUP</option>
+                                    <option value="VALUE">VALUE</option>
+                                    <option value="CTA">CTA</option>
+                                    <option value="">全部</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>条数</label>
+                                <input type="number" name="limit" value="3" min="1" max="10">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-secondary">执行检索</button>
+                    </form>
+                    <div class="result-list" id="searchResults">
+                        <div class="empty-state">暂无检索结果</div>
+                    </div>
+                </section>
+                
+                <!-- Panel: Generate -->
+                <section class="panel-card" id="generate-panel">
+                    <div class="panel-header">
+                        <div class="header-title">
+                            <div class="panel-icon icon-amber"></div>
+                            <h2>样本驱动创作台</h2>
+                        </div>
+                    </div>
+                    <form id="generateForm" class="form-stack">
+                        <div class="form-group">
+                            <label>创作主题</label>
+                            <input type="text" name="topic" placeholder="例如：向老板汇报 AI 项目价值" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>语气</label>
+                                <input type="text" name="tone" value="专业、锋利">
+                            </div>
+                            <div class="form-group">
+                                <label>长度</label>
+                                <input type="number" name="length" value="280">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>样本 UUID</label>
+                            <input type="text" name="sampleUuids" placeholder="多个用逗号分隔；留空则自动选样">
+                        </div>
+                        <button type="submit" class="btn-primary">生成脚本</button>
+                    </form>
+                    <article class="generation-output" id="generationOutput">
+                        <div class="empty-state">
+                            <h3>等待生成</h3>
+                            <p>提交主题后，这里会显示最终脚本与引用样本。</p>
+                        </div>
+                    </article>
+                </section>
             </div>
-            <form id="generateForm" class="form-stack">
-                <label>
-                    <span>创作主题</span>
-                    <input type="text" name="topic" placeholder="例如：向老板汇报 AI 项目价值" required>
-                </label>
-                <div class="inline-grid triple-grid">
-                    <label>
-                        <span>语气</span>
-                        <input type="text" name="tone" value="专业、锋利">
-                    </label>
-                    <label>
-                        <span>长度</span>
-                        <input type="number" name="length" value="280" min="50" max="1200">
-                    </label>
-                    <label>
-                        <span>样本 UUID</span>
-                        <input type="text" name="sampleUuids" placeholder="多个用逗号分隔；留空则自动选样">
-                    </label>
-                </div>
-                <button type="submit" class="primary-btn wide-btn">生成脚本</button>
-            </form>
-            <article class="generation-output" id="generationOutput">
-                <h3>等待生成</h3>
-                <p>提交主题后，这里会显示最终脚本与引用样本。</p>
-            </article>
-        </section>
+        </div>
     </main>
-</div>
 
-<script src="/app.js"></script>
+    <script src="/app.js"></script>
 </body>
 </html>
