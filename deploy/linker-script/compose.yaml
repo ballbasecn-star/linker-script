@@ -1,6 +1,6 @@
 services:
   linker-script:
-    image: linkscript:latest-amd64
+    image: ${IMAGE_REPOSITORY:-linkscript}:${IMAGE_TAG:?IMAGE_TAG is required}
     container_name: linker-script
     restart: unless-stopped
     env_file:
